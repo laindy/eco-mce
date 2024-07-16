@@ -1,0 +1,144 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+generator docs {
+  provider = "node node_modules/prisma-docs-generator"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum FeatureType {
+  STRING
+  NUMBER
+  IMAGE
+  BOOLEAN
+  COLOR
+}
+
+model ProductType {
+  id         String     @id @default(uuid())
+  code       String     @unique
+  label      String
+  createdAt  DateTime?  @default(now()) @map("created_at")
+  updatedAt  DateTime?  @default(now()) @updatedAt @map("updated_at")
+  deletedAt  DateTime?  @map("deleted_at")
+  categories Category[]
+}
+
+model Category {
+  id            String        @id @default(uuid())
+  name          String
+  description   String
+  productTypeId String
+  createdAt     DateTime?     @default(now()) @map("created_at")
+  updatedAt     DateTime?     @default(now()) @updatedAt @map("updated_at")
+  deletedAt     DateTime?     @map("deleted_at")
+  productType   ProductType   @relation(fields: [productTypeId], references: [id])
+  subcategories Subcategory[]
+}
+
+model Subcategory {
+  id            String                    @id @default(uuid())
+  name          String
+  description   String
+  categoryId    String
+  createdAt     DateTime?                 @default(now()) @map("created_at")
+  updatedAt     DateTime?                 @default(now()) @updatedAt @map("updated_at")
+  deletedAt     DateTime?                 @map("deleted_at")
+  category      Category                  @relation(fields: [categoryId], references: [id])
+  productModels ProductModelSubcategory[]
+}
+
+model ProductModel {
+  id                   String                    @id @default(uuid())
+  name                 String
+  description          String
+  partnerId            String
+  subcategoryIds       String[]
+  createdAt            DateTime?                 @default(now()) @map("created_at")
+  updatedAt            DateTime?                 @default(now()) @updatedAt @map("updated_at")
+  deletedAt            DateTime?                 @map("deleted_at")
+  subcategories        ProductModelSubcategory[]
+  productModelFeatures ProductModelFeature[]
+  products             Product[]
+}
+
+model ProductModelSubcategory {
+  productModelId String
+  subcategoryId  String
+  createdAt      DateTime?    @default(now()) @map("created_at")
+  updatedAt      DateTime?    @default(now()) @updatedAt @map("updated_at")
+  deletedAt      DateTime?    @map("deleted_at")
+  productModel   ProductModel @relation(fields: [productModelId], references: [id])
+  subcategory    Subcategory  @relation(fields: [subcategoryId], references: [id])
+
+  @@id([productModelId, subcategoryId])
+}
+
+model ProductModelFeature {
+  id              String           @id @default(uuid())
+  productModelId  String
+  code            String           @unique
+  label           String
+  type            FeatureType
+  createdAt       DateTime?        @default(now()) @map("created_at")
+  updatedAt       DateTime?        @default(now()) @updatedAt @map("updated_at")
+  deletedAt       DateTime?        @map("deleted_at")
+  productModel    ProductModel     @relation(fields: [productModelId], references: [id])
+  productFeatures ProductFeature[]
+}
+
+model Product {
+  id              String           @id @default(uuid())
+  name            String
+  description     String
+  price           Float
+  productModelId  String
+  pointOfSaleIds  String[]
+  createdAt       DateTime?        @default(now()) @map("created_at")
+  updatedAt       DateTime?        @default(now()) @updatedAt @map("updated_at")
+  deletedAt       DateTime?        @map("deleted_at")
+  productModel    ProductModel     @relation(fields: [productModelId], references: [id])
+  images          ProductImage[]
+  productFeatures ProductFeature[]
+}
+
+model ProductImage {
+  id        String    @id @default(uuid())
+  productId String
+  url       String
+  filename  String
+  createdAt DateTime? @default(now()) @map("created_at")
+  updatedAt DateTime? @default(now()) @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+  product   Product   @relation(fields: [productId], references: [id])
+}
+
+model ProductFeature {
+  id                    String                @id @default(uuid())
+  productId             String
+  productModelFeatureId String
+  value                 String
+  additionalPrice       Float?
+  createdAt             DateTime?             @default(now()) @map("created_at")
+  updatedAt             DateTime?             @default(now()) @updatedAt @map("updated_at")
+  deletedAt             DateTime?             @map("deleted_at")
+  product               Product               @relation(fields: [productId], references: [id])
+  productModelFeature   ProductModelFeature   @relation(fields: [productModelFeatureId], references: [id])
+  images                ProductFeatureImage[]
+}
+
+model ProductFeatureImage {
+  id               String         @id @default(uuid())
+  productFeatureId String
+  url              String
+  filename         String
+  createdAt        DateTime?      @default(now()) @map("created_at")
+  updatedAt        DateTime?      @default(now()) @updatedAt @map("updated_at")
+  deletedAt        DateTime?      @map("deleted_at")
+  productFeature   ProductFeature @relation(fields: [productFeatureId], references: [id])
+}
